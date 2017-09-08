@@ -123,7 +123,7 @@ var PayloadPanel = (function() {
         }]
       }]
     };
-
+    
     return Common.buildDomElement(payloadJson);
   }
 
@@ -154,6 +154,7 @@ var PayloadPanel = (function() {
           }
           return '<span class="' + cls + '">' + match + '</span>';
         });
+        //alert(convert);
     return convert;
   }
 

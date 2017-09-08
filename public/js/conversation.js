@@ -51,6 +51,7 @@ var ConversationPanel = (function() {
   // This value is then used to set the new width of the visible input box.
   function setupInputBox() {
     var input = document.getElementById('textInput');
+	//alert(input);
     var dummy = document.getElementById('textInputDummy');
     var minFontSize = 14;
     var maxFontSize = 16;
@@ -215,10 +216,11 @@ var ConversationPanel = (function() {
       var latestResponse = Api.getResponsePayload();
       if (latestResponse) {
         context = latestResponse.context;
-      }
+	      }
 
       // Send the user message
       Api.sendRequest(inputBox.value, context);
+	  //alert(inputBox.value)
 
       // Clear input box for further messages
       inputBox.value = '';

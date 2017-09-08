@@ -1,31 +1,21 @@
-/**
- * Copyright 2015 IBM Corp. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 'use strict';
 
 var express = require('express'); // app server
 var bodyParser = require('body-parser'); // parser for post requests
 var Conversation = require('watson-developer-cloud/conversation/v1'); // watson sdk
+const mysql = require('mysql');
+const fs = require('fs');
 
 var app = express();
 
 // Bootstrap application settings
 app.use(express.static('./public')); // load UI from public folder
-app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 
+app.use(bodyParser.json());
+//var myModule=require('./public/js/api');
+//console.log(myModule.inputtext1);
 // Create the service wrapper
 var conversation = new Conversation({
   // If unspecified here, the CONVERSATION_USERNAME and CONVERSATION_PASSWORD env properties will be checked
@@ -38,6 +28,18 @@ var conversation = new Conversation({
 
 // Endpoint to be call from the client side
 app.post('/api/message', function(req, res) {
+	//console.log('params: ' + JSON.stringify(req.params));
+	//console.log('body: ' + JSON.stringify(req.body));
+	//console.log('bodyLength: ' + JSON.stringify(req.body).length);
+	//console.log('query: ' + JSON.stringify(req.query));
+   if(JSON.stringify(req.body).length>2){
+   var a = JSON.stringify(req.body.input.text).replace(/\"/g, "");
+   }
+   else {
+	   
+	   var a ="hello" ;
+   }
+   //console.log("ok"+ a);
   var workspace = process.env.WORKSPACE_ID || '<workspace-id>';
   if (!workspace || workspace === '<workspace-id>') {
     return res.json({
@@ -51,15 +53,48 @@ app.post('/api/message', function(req, res) {
     context: req.body.context || {},
     input: req.body.input || {}
   };
+  
+  const connection = mysql.createConnection(  
+    {
+        host: 'sl-aus-syd-1-portal.2.dblayer.com',
+        port: 17099,
+        user: 'admin',
+        password: 'VRIXEQIHFTURGYYN',
+        ssl: {
+            ca: fs.readFileSync(__dirname + '/cert.crt')
+        }
+});
 
+var util = require('util');
+var mySql = util.format('insert into FAQ.tbl_FAQ (question) values ("%s")', a);
+
+connection.query(mySql, (err, rows) => {  
+    if (err) throw err;
+    console.log('Inserted');
+	//console.log("test"+req.body.value);
+	//console.log("test"+req.query.textInput);
+	//console.log("test6"+req.body.textinputnew);
+    for (let i = 0, len = rows.length; i < len; i++) {
+        console.log(rows[i]['Database'])
+		//console.log("test"+req.body.textInput)
+    }
+});
+
+    
   // Send the input to the conversation service
-  conversation.message(payload, function(err, data) {
+   conversation.message(payload, function(err, data) {
     if (err) {
       return res.status(err.code || 500).json(err);
     }
+	//console.log(payload.params + "message");
     return res.json(updateMessage(payload, data));
+	
+    
+	
   });
 });
+
+
 
 /**
  * Updates the response text using the intent confidence
@@ -68,9 +103,14 @@ app.post('/api/message', function(req, res) {
  * @return {Object}          The response with the updated message
  */
 function updateMessage(input, response) {
+  //console.log("test10"+response.output.text);
+  //console.log('body10: ' + JSON.stringify(input.body));
+
+  
+  //console.log("test11"+input.params.toString());
   var responseText = null;
   if (!response.output) {
-    response.output = {};
+    response.output = "Hey!Sorry I am not fully trained as of now ";
   } else {
     return response;
   }
@@ -90,7 +130,12 @@ function updateMessage(input, response) {
     }
   }
   response.output.text = responseText;
+    //console.log(response.output.text);
+   
+
   return response;
+  
+  
 }
 
 module.exports = app;
